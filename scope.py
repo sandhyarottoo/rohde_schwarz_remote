@@ -1,10 +1,23 @@
+#Subclass of RsInstrument for the RTO2014
+#Lots of code borrowed from https://github.com/Rohde-Schwarz/Examples
+#Author: Sandhya Rottoo (sandhya.rottoo@mail.mcgill.ca)
+
+
 from RsInstrument import *
 from matplotlib import pyplot as plt
 import numpy as np
 
 class Scope(RsInstrument):
 
+    '''
+    Subclass of the RsInstrument class for the RTO2014. 
+    '''
+
     def __init__(self,ip):
+        '''
+        param ip: the IP address of your scope
+        Initializes a connection to the RTO2014
+        '''
         try:
             super().__init__(ip,reset=False, options='VxiCapable = ON, VisaTimeout = 10000, SelectVisa = rs')
             self.visa_timeout = 100000  # Timeout for VISA Read Operations
@@ -30,7 +43,7 @@ class Scope(RsInstrument):
         rto.setup_chan(1,0.01,2,0,AC)
         will set up the channel 1 for a 10 ms acquisition, with a 2V range, 0 offset and AC coupling
         '''
-
+        #check that the inputs are all valid
         if channumber not in [1,2,3,4]:
             raise ValueError(f"Invalid channel number: {channumber}. Please select from 1,2,3,4")
         if coupling not in ['AC','DC','DCLimit']:
@@ -38,12 +51,13 @@ class Scope(RsInstrument):
         print(f'Setting up channel {channumber} \n acquisition over: {xrange}s '
               f'\n voltage range: {yrange} V'
               f'\n DC offset: {offset}V \n coupling: {coupling}V')
-
         if self.chancount == 0:
             self.xrange = xrange
         else:
             if xrange != self.xrange:
                 print(f'xrange already initialized with another channel. Setting xrange to {self.xrange}')
+       
+        #setup the channel
         self.write_str(f"ACQ:POIN:AUTO RECL")  # Define Horizontal scale by number of points
         self.write_str(f"TIM:RANG {self.xrange}")  # 10ms Acquisition time
         self.write_str(f"ACQ:POIN {xpoints}")  # 20002 X points
@@ -52,8 +66,11 @@ class Scope(RsInstrument):
         self.write_str(f"CHAN{channumber}:COUP {coupling}")  # Coupling AC 1MOhm
         self.write_str(f"CHAN{channumber}:STAT ON")  # Switch Channel 1 ON
         self.chancount += 1
+
+
     def manual_trigger(self,channumber,level,mode = 'NORMal',type = "EDGE;:TRIG1:EDGE:SLOP POS"):
         '''
+        Set up a manual trigger for a given channel and trigger level
         :param channumber: channel number (1,2,3,4)
         :param level: trigger level in V
         :param mode: trigger mode (AUTO or NORMal)
@@ -69,12 +86,16 @@ class Scope(RsInstrument):
         self.query_opc()  # Using *OPC? query waits until all the instrument settings are finished
 
     def auto_trigger(self):
+        '''
+        Set the scope to trigger automatically (equivalent of the autoset button on the top left)
+        '''
         self.write_str(f"TRIG1:MODE AUTO")  # Trigger Auto mode in case of no signal is applied
 
 
     def get_data(self,channumber,n = 1,save = False,plot = False,savepath = None):
         '''
         Gets the measurement data from the scope for a given channel and returns it
+        Option to aquire many waveforms and then average them
         :param channumber: channel number (1,2,3,4)
         :return:
         '''
@@ -88,24 +109,23 @@ class Scope(RsInstrument):
         return trace
 
     def get_xticks(self):
+        '''
+        For plotting. Gets the time of a waveform
+        '''
         xrange = float(self.query_str('TIM:RANG?'))
         return xrange
 
     def screenshot(self,path_to_save):
-        # get screenshot
+        '''
+        Takes a screenshot of the scope and saves it to your computer
+        '''
         file_path_instr = r'c:\Temp\Device_Screenshot.png'
 
         self.write_str("HCOPy:DEVice1:LANGuage PNG")
         self.write_str(f"MMEMory:NAME '{file_path_instr}'")
         self.write_str_with_opc("HCOPy:IMMediate1")
         self.read_file_from_instrument_to_pc(file_path_instr, path_to_save)
-        # Delete instrument file after operation is complete to avoid errors @ next script execution
+
         self.query_opc()
 
         print(f"\nSaved screenshot to {path_to_save}")
-
-def savedata(data,path):
-    with open(path,'wb') as f:
-        f.write(data)
-        f.close()
-
