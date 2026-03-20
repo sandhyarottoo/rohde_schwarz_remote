@@ -69,7 +69,7 @@ class Scope(RsInstrument):
 
     def turn_channel_off(self,channumber):
         # turns the channel off
-        self.write_str(f'CHAN{channumber}: STAT OFF')
+        self.write_str(f'CHAN{channumber}:STAT OFF')
 
     def manual_trigger(self,channumber,level,mode = 'NORMal',type = "EDGE;:TRIG1:EDGE:SLOP POS"):
         '''
@@ -116,7 +116,16 @@ class Scope(RsInstrument):
         For plotting. Gets the time of a waveform
         '''
         xrange = float(self.query_str('TIM:RANG?'))
+        self.query_opc()
         return xrange
+
+    def check_coupling(self,channumber):
+        #check the coupling of a channel
+        #you can do this for any of the parameters in the same format
+        #remember to always put self.query_opc() at the end
+        coup = self.query_str(f'CHAN{channumber}:COUP?')
+        self.query_opc()
+        print(f'Coupling for channel {channumber}: {coup} ')
 
     def screenshot(self,path_to_save):
         '''

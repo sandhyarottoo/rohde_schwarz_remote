@@ -7,7 +7,8 @@ import os
 
 
 #initialize the scope
-rto = Scope('TCPIP::192.168.0.160::hislip0')
+ip = '192.168.0.160'
+rto = Scope(f'TCPIP::{ip}::hislip0')
 rto.clear_status()
 rto.reset()
 
@@ -16,6 +17,8 @@ rto.setup_chan(2,1,1,0,'AC')
 
 rto.setup_chan(1,0.1,3,0,'DCLimit')
 
+#check the coupling
+rto.check_coupling(1)
 
 #set up the auto trigger
 rto.auto_trigger()
@@ -28,9 +31,13 @@ ch1 = rto.get_data(1)
 ch2 = rto.get_data(2)
 
 
+#turn channel 2 off 
+
+rto.turn_channel_off(2)
+
 #path to save a screenshot to
 savepath = os.getcwd()
-fname = savepath + '\screenshot.png'
+fname = savepath + '/screenshot.png' #remember to put a \ instead of / if you are on windows
 os.chdir(savepath)
 
 #take a screenshot and save it
