@@ -20,6 +20,8 @@ into your command line.
 
 # Now you are ready to control your scope remotely. 
 
+Clone the repository and sit in a room with the oscilloscope. Change the ip address in ```example.py``` to the scope's IP address, and change the filepath for the screenshots to be saved if desired. 
+
 ```scope.py``` contains a subclass definition of the RSInstrument class, designed specifically for the RTO2014. It contains functions to set up the oscilloscope's channels with a voltage range, offset and coupling, turn on a manual trigger or an automatic trigger, get a single waveform from the scope and take and save a screenshot from the scope. 
 
 The code is pretty self explanatory and ```example.py``` walks you through how to use it. 
