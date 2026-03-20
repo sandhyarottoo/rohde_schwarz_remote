@@ -67,6 +67,9 @@ class Scope(RsInstrument):
         self.write_str(f"CHAN{channumber}:STAT ON")  # Switch Channel 1 ON
         self.chancount += 1
 
+    def turn_channel_off(self,channumber):
+        # turns the channel off
+        self.write_str(f'CHAN{channumber}: STAT OFF')
 
     def manual_trigger(self,channumber,level,mode = 'NORMal',type = "EDGE;:TRIG1:EDGE:SLOP POS"):
         '''
