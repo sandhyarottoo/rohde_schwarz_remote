@@ -6,6 +6,8 @@
 from RsInstrument import *
 from matplotlib import pyplot as plt
 import numpy as np
+from time import time
+from scipy.signal import correlate
 
 class Scope(RsInstrument):
 
@@ -93,7 +95,8 @@ class Scope(RsInstrument):
         Set the scope to trigger automatically (equivalent of the autoset button on the top left)
         '''
         self.write_str(f"TRIG1:MODE AUTO")  # Trigger Auto mode in case of no signal is applied
-
+        self.write_str('SINGle')
+        self.query_opc()
 
     def get_data(self,channumber,n = 1,save = False,plot = False,savepath = None):
         '''
@@ -141,3 +144,92 @@ class Scope(RsInstrument):
         self.query_opc()
 
         print(f"\nSaved screenshot to {path_to_save}")
+
+
+    def bode_plot(self,outpt,freqs,f_to_save,inpt = None, calculate_phase = False):
+        '''
+
+        outpt (int): channel number of the output of circuit you are measuring
+        freqs (list): list of frequencies you are sweeping
+        inpt (int): channel for the input signal to the circuit, if phase shift is desired
+        calculate_phase (bool): whether or not to calcualte phase for the bode plot 
+        How to use:
+
+        Set the function generator to the start frequency and run this function. 
+        Then when you get the input message, change the frequency and press enter. 
+        Keep going for the desired number of frequencies.
+        
+        '''
+        nfreqs = len(freqs)
+        vpps = np.empty(nfreqs)
+        phase = np.empty(nfreqs)
+
+        #open the file to save
+        with open(f_to_save,'a') as f:
+
+            for n in range(nfreqs):
+                try:
+                    #get the output data, time range
+                    d2 = self.get_data(outpt)
+                    xrange = self.get_xticks()
+
+                    #calculate Vpp (not a very accurate calculation for now)
+                    vpps[n] = (np.max(d2)-np.min(d2))
+                    phase_diff = 'N/A'
+
+                    #if you want the phase
+                    if calculate_phase:
+                        #get the signal data
+                        d1 = self.get_data(inpt)
+                        
+                        #subtract the mean to avoid any offsets
+                        d1_zeroed = d1-np.mean(d1)
+                        d2_zeroed = d2-np.mean(d2)
+
+                        #perform a cross correlation
+                        corr = correlate(d1_zeroed,d2_zeroed)
+
+                        #get a time array
+                        t = np.linspace(0,xrange,len(corr))
+
+                        #calculate phase difference: delta phi = delta t * freq * 2pi
+                        phase_diff = t[corr.argmax()]*freqs[n]*2*np.pi
+                        phase[n] = phase_diff
+                    
+                    #print the values and write to file
+                    print(f'Freq: {freqs[n]}, Vpp: {vpps[n]}, Phase: {phase_diff}')
+                    f.write(f"{freqs[n]},{vpps[n]}\n")
+
+                    #wait for user to change to next frequency
+                    input("Press Enter to continue...")
+                except:
+                    f.close()
+                    return (vpps,phase)
+        f.close()
+        return (vpps,phase)
+    
+
+    
+    # def get_vpp(self, channumber):
+    #     """
+    #     Returns Vpp for the specified channel using the scope's measurement engine.
+        
+    #     :param channumber: int (1–4)
+    #     :return: float (Vpp in volts)
+    #     """
+    #     if channumber not in [1, 2, 3, 4]:
+    #         raise ValueError("Channel must be 1, 2, 3, or 4")
+
+    #     # Ensure channel is on
+    #     self.write_str(f"CHAN{channumber}:STAT ON")
+    #     results = self.query('MEASure:RESults:ALL?')
+    #     print(f"Measurement Results: {results}")
+    # #     self.write_str(f'MEASurement1:SOURce M1')
+    # #     print(self.query_str("MEASurement1:MAIN?"))
+    # #     self.query_opc()
+    # #     print('queried')
+    # #     # assert(1==0)
+    # #     # Configure measurement (use slot 1)
+    # #  # Query peak-to-peak voltage directly
+    # #     vpp = self.query_float("MEASurement1:AMPL?")
+    # #     return vpp
