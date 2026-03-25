@@ -27,6 +27,7 @@ class Scope(RsInstrument):
             self.instrument_status_checking = True  # Error check after each command
             print(f'Initialized scope {ip}')
             self.chancount = 0
+            self.write_with_opc('SYSTem:DISPlay:UPDate ON')
         except:
             print(f'Failed to initialize scope {ip}')
             print('Please check the IP address, and that the R&S visa is installed, and try again')
@@ -145,6 +146,25 @@ class Scope(RsInstrument):
 
         print(f"\nSaved screenshot to {path_to_save}")
 
+
+    def get_measurement(self,channumber):
+
+        self.write('MEASurement1:SOURce M1')
+        self.write('MEASurement1:MAIN AMPL')
+
+        print('configured M1')
+
+        self.write_with_opc('SINGle')
+
+        print('single')
+
+        self.write_with_opc('MEASurement1:ENABle ON')
+
+        print('measurement enabled')
+
+        rms_value = self.query_float('MEASUrement1:RESult?')
+
+        print(rms_value)
 
     def bode_plot(self,outpt,freqs,f_to_save,inpt = None, calculate_phase = False):
         '''

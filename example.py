@@ -30,7 +30,7 @@ xrange = rto.get_xticks()
 ch1 = rto.get_data(1)
 ch2 = rto.get_data(2)
 
-
+rms = rto.get_measurement(1)
 #turn channel 2 off 
 
 rto.turn_channel_off(2)
