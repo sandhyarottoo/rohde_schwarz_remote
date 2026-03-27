@@ -147,24 +147,31 @@ class Scope(RsInstrument):
         print(f"\nSaved screenshot to {path_to_save}")
 
 
-    def get_measurement(self,channumber):
+    def get_measurement(self,nmeasurements):
 
-        self.write('MEASurement1:SOURce M1')
-        self.write('MEASurement1:MAIN AMPL')
+        # UNFINISHED
 
-        print('configured M1')
+        vpps,freqs = [],[]
 
-        self.write_with_opc('SINGle')
+        for i in range(nmeasurements):
 
-        print('single')
+            
+            vpp_value = self.query_bin_or_ascii_float_list('MEASUrement1:RESULT?')
+            vpps.append(vpp_value)
 
-        self.write_with_opc('MEASurement1:ENABle ON')
+            frequency = self.query_bin_or_ascii_float_list('MEASUrement2:RESULT?')
+            freqs.append(frequency)
+            self.query_opc()
 
-        print('measurement enabled')
 
-        rms_value = self.query_float('MEASUrement1:RESult?')
+        return vpp_value,frequency
 
-        print(rms_value)
+    
+    def get_fft(self):
+        #  self.write('MEASurement1:SOURce M1')
+         fft = self.query_bin_or_ascii_float_list('MEASUrement1:M1?')
+         return fft
+
 
     def bode_plot(self,outpt,freqs,f_to_save,inpt = None, calculate_phase = False):
         '''
@@ -227,29 +234,23 @@ class Scope(RsInstrument):
                     return (vpps,phase)
         f.close()
         return (vpps,phase)
-    
 
-    
-    # def get_vpp(self, channumber):
-    #     """
-    #     Returns Vpp for the specified channel using the scope's measurement engine.
-        
-    #     :param channumber: int (1–4)
-    #     :return: float (Vpp in volts)
-    #     """
-    #     if channumber not in [1, 2, 3, 4]:
-    #         raise ValueError("Channel must be 1, 2, 3, or 4")
 
-    #     # Ensure channel is on
-    #     self.write_str(f"CHAN{channumber}:STAT ON")
-    #     results = self.query('MEASure:RESults:ALL?')
-    #     print(f"Measurement Results: {results}")
-    # #     self.write_str(f'MEASurement1:SOURce M1')
-    # #     print(self.query_str("MEASurement1:MAIN?"))
-    # #     self.query_opc()
-    # #     print('queried')
-    # #     # assert(1==0)
-    # #     # Configure measurement (use slot 1)
-    # #  # Query peak-to-peak voltage directly
-    # #     vpp = self.query_float("MEASurement1:AMPL?")
-    # #     return vpp
+
+    def fft(self,ch,startfreq,stopfreq):
+
+        # UNFINISHED
+        fft_vars = {'f_start': '20E+6',
+                'f_stop': '450E+6',
+                'rbw': '300E+3'}
+        self.write('LAY:SIGNal:UNASsign C1W1')
+
+        # FFT settings for Channel1
+        self.write(f"CALCulate:MATH1 'FFTmag(C{ch}W1)'")
+        self.write('CALCulate:MATH1:FFT:STARt ' + fft_vars['f_start'])
+        self.write('CALCulate:MATH1:FFT:STOP ' + fft_vars['f_stop'])
+        self.write('CALCulate:MATH1:FFT:BANDwidth:RESolution:VALue ' + fft_vars['rbw'])
+        self.write('CALCulate:MATH1:FFT:MAGNitude:SCALe DBM')
+
+        # Display FFT
+        self.write_with_opc('CALCulate:MATH1:STATe ON')
